@@ -72,25 +72,64 @@
 
 ;;braun tree
 (defun brtreep (brtr)
-  (declare (xargs :guard (streep brtr)))
-  (if (endp brtr)
-    t
-    (let ((lc (stree-left brtr))
-          (rc (stree-right brtr)))
-      (let ((lcsz (stree-size lc))
-            (rcsz (stree-size rc)))
-        (if (or (equal lcsz rcsz)
-                (equal lcsz (+ rcsz 1)))
-          (and (brtreep lc) (brtreep rc))
-          nil)))))#|ACL2s-ToDo-Line|#
+;;  (declare (xargs :guard (streep brtr)))
+  (declare (xargs :guard t))
+  (if (streep brtr)
+    (if (endp brtr)
+      t
+      (let ((lc (stree-left brtr))
+            (rc (stree-right brtr)))
+        (let ((lcsz (stree-size lc))
+              (rcsz (stree-size rc)))
+          (if (or (equal lcsz rcsz)
+                  (equal lcsz (+ rcsz 1)))
+            (and (brtreep lc) (brtreep rc))
+            nil))))
+    nil))
+
+;;in brtree-diff, num must satisfy the condition
+;; that size = num or size = num + 1
+
+(defun stree-size-nump (brtr num)
+  (declare (xargs :guard (and (streep brtr)
+                              (natp num))))
+  (let ((sz (stree-size brtr)))
+    (or (equal sz num)
+        (equal sz (+ num 1)))))
+
+;;number theory
+;; number can be odd xor even
+(defthm odd-even-xor
+  (implies (natp num)
+           (xor (evenp num) (oddp num))))
+
+(defthm odd-1-even-induct
+  (implies (natp num)
+           (and 
+            ;;base case
+            (implies (equal num 1)
+                     (implies (oddp num) (evenp (- num 1))))
+            ;;inductive step
+            (implies (and (< num 1)
+                          (implies (oddp num) (evenp (- num 1))))
+                     (implies (oddp (+ num 2)) (evenp (- (+ num 2) 1)))))))#|ACL2s-ToDo-Line|#
 
 
 
-;; stuck here !!!
+;; odd number minus 1 is even number
+(defthm odd-1-even
+  (implies (natp num)
+           (implies (oddp num)
+                    (evenp (- num 1)))))
+
+
+
+
 ;;braun tree diff
 (defun brtree-diff (brtr num)
   (declare (xargs :guard (and (brtreep brtr) 
-                              (natp num))))
+                              (natp num)
+                              (stree-size-nump brtr num))))
   (cond
    ((zp num)
     (if (streep-leaf brtr)
@@ -107,7 +146,6 @@
   (declare (xargs :guard (brtreep brtr)))
   (if (endp brtr)
     0
-    (let ((m (brtree-size (stree-right brtr))))
-      (+ (+ 1 (* m 2))
-         (brtree-diff (stree-left brtr) m)))))
+    (let ((m (brtree-size (stree-right brtr)))
+          (s (stree-left brtr)))
   
