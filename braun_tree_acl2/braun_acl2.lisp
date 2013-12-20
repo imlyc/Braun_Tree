@@ -56,11 +56,58 @@
            (equal (stree-size-it tr) (stree-size tr))))
 
 ;;stree constructor
-(defun streec-leaf () nil)
+(defun streec-leaf (data)
+  (list 1 nil nil data))
 
 (defun streec (data lc rc)
   (declare (xargs :guard (and (streep lc) (streep rc))))
-  (list (+ 1 (+ (stree-size lc) (stree-size rc))) lc rc data))#|ACL2s-ToDo-Line|#
+  (list (+ 1 (+ (stree-size lc) (stree-size rc))) lc rc data))
 
+(defun streep-leaf (tr)
+  (declare (xargs :guard (streep tr)))
+  (if (endp tr)
+    nil
+    (and (equal (stree-left tr) nil)
+         (equal (stree-right tr) nil))))
 
 ;;braun tree
+(defun brtreep (brtr)
+  (declare (xargs :guard (streep brtr)))
+  (if (endp brtr)
+    t
+    (let ((lc (stree-left brtr))
+          (rc (stree-right brtr)))
+      (let ((lcsz (stree-size lc))
+            (rcsz (stree-size rc)))
+        (if (or (equal lcsz rcsz)
+                (equal lcsz (+ rcsz 1)))
+          (and (brtreep lc) (brtreep rc))
+          nil)))))#|ACL2s-ToDo-Line|#
+
+
+
+;; stuck here !!!
+;;braun tree diff
+(defun brtree-diff (brtr num)
+  (declare (xargs :guard (and (brtreep brtr) 
+                              (natp num))))
+  (cond
+   ((zp num)
+    (if (streep-leaf brtr)
+      1
+      0))
+   ((oddp num)
+    (brtree-diff (stree-left brtr) (/ (- num 1) 2)))
+   ((evenp num)
+    (brtree-diff (stree-right brtr) (/ (- num 2) 2)))
+   (t 7)))
+
+;;braun size
+(defun brtree-size (brtr)
+  (declare (xargs :guard (brtreep brtr)))
+  (if (endp brtr)
+    0
+    (let ((m (brtree-size (stree-right brtr))))
+      (+ (+ 1 (* m 2))
+         (brtree-diff (stree-left brtr) m)))))
+  
