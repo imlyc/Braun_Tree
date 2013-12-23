@@ -1,3 +1,5 @@
+(include-book "arithmetic/top-with-meta" :dir :system)
+
 ;;braun tree
 ;;stree is a list, either a nil list or a list with four elements
 ;;nil | size left right data
@@ -5,7 +7,7 @@
 ;;define tree with size, size tree
 (defun streep (tr)
   (declare (xargs :guard t))
-  (if (listp tr)
+  (if (true-listp tr)
     (if (endp tr)
       t
       (if (equal (len tr) 4)
@@ -95,40 +97,15 @@
                               (natp num))))
   (let ((sz (stree-size brtr)))
     (or (equal sz num)
-        (equal sz (+ num 1)))))
+        (equal sz (+ num 1)))))#|ACL2s-ToDo-Line|#
+
 
 ;;number theory
-;; number can be odd xor even
-(defthm odd-even-xor
-  (implies (natp num)
-           (xor (evenp num) (oddp num))))
-
-(defthm odd-1-even-induct
-  (implies (natp num)
-           (and 
-            ;;base case
-            (implies (equal num 1)
-                     (implies (oddp num) (evenp (- num 1))))
-            ;;inductive step
-            (implies (and (< num 1)
-                          (implies (oddp num) (evenp (- num 1))))
-                     (implies (oddp (+ num 2)) (evenp (- (+ num 2) 1)))))))#|ACL2s-ToDo-Line|#
-
-
-
-;; odd number minus 1 is even number
-(defthm odd-1-even
-  (implies (natp num)
-           (implies (oddp num)
-                    (evenp (- num 1)))))
-
-
-
+;;(in-theory (disable evenp oddp))
 
 ;;braun tree diff
 (defun brtree-diff (brtr num)
-  (declare (xargs :guard (and (brtreep brtr) 
-                              (natp num)
+  (declare (xargs :guard (and (natp num) (brtreep brtr) 
                               (stree-size-nump brtr num))))
   (cond
    ((zp num)
@@ -138,8 +115,7 @@
    ((oddp num)
     (brtree-diff (stree-left brtr) (/ (- num 1) 2)))
    ((evenp num)
-    (brtree-diff (stree-right brtr) (/ (- num 2) 2)))
-   (t 7)))
+    (brtree-diff (stree-right brtr) (/ (- num 2) 2)))))
 
 ;;braun size
 (defun brtree-size (brtr)
@@ -148,4 +124,5 @@
     0
     (let ((m (brtree-size (stree-right brtr)))
           (s (stree-left brtr)))
+          (braun-diff s m))))
   
