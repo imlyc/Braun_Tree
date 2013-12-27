@@ -35,6 +35,8 @@
 
 ; ******************* END INITIALIZATION FOR ACL2s MODE ******************* ;
 ;$ACL2s-SMode$;ACL2s
+(acl2::include-book "arithmetic-5/top" :dir :system)
+
 ;;braun tree
 ;;stree is a list, either a nil list or a list with four elements
 ;;nil | size left right data
@@ -43,7 +45,7 @@
 (defunc streep (tr)
   :input-contract t
   :output-contract (booleanp (streep tr))
-  (if (acl2::true-listp tr)
+  (if (true-listp tr)
     (if (endp tr)
       t
       (if (equal (len tr) 4)
@@ -55,7 +57,7 @@
                    (streep rc))
             (let ((lcsz (if (endp lc) 0 (first lc)))
                   (rcsz (if (endp rc) 0 (first rc))))
-              (equal sz (+ 1 (+ lcsz rcsz))))
+              (equal sz (+ 1 lcsz rcsz)))
             nil))
         nil))
     nil))
@@ -87,8 +89,8 @@
   :output-contract (natp (stree-size-it tr))
   (if (endp tr)
     0
-    (+ 1 (+ (stree-size-it (stree-left tr))
-            (stree-size-it (stree-right tr))))))
+    (+ 1 (stree-size-it (stree-left tr))
+       (stree-size-it (stree-right tr)))))
 
 ;;tree size equivalence
 (defthm stree-size-it=stree-size
@@ -131,15 +133,27 @@
     (or (equal sz num)
         (equal sz (+ num 1)))))
 
+(defthm brtree-left-is-brtree
+  (implies (and (brtreep brtr) (not (endp brtr)))
+           (brtreep (stree-left brtr))))
+(defthm brtree-right-is-brtree
+  (implies (and (brtreep brtr) (not (endp brtr)))
+           (brtreep (stree-right brtr))))
 ;;number theory
 ;;(in-theory (disable evenp oddp))
-(defdata one-zero (oneof 1 0))#|ACL2s-ToDo-Line|#
+;;(defdata one-zero (oneof 1 0))
+(defthm natp-compound-recognizer      ; See discussion below.
+  (equal (natp x)
+         (and (integerp x)
+              (<= 0 x)))
+  :rule-classes :compound-recognizer)#|ACL2s-ToDo-Line|#
+
 
 ;;braun tree diff
 (defunc brtree-diff (brtr num)
   :input-contract (and (natp num) (brtreep brtr) 
                               (stree-size-nump brtr num))
-  :output-contract (one-zerop (brtree-diff brtr num))
+  :output-contract (natp (brtree-diff brtr num))
   (cond
    ((zp num)
     (if (streep-leaf brtr)
@@ -156,6 +170,6 @@
   (if (endp brtr)
     0
     (let ((m (brtree-size (stree-right brtr)))
-          (s (stree-left brtr)))
-          (braun-diff s m))))
+         (s (stree-left brtr)))
+          (+ 1 (* 2 m) (brtree-diff s m)))))
   
