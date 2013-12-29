@@ -101,8 +101,8 @@
 
 ;;braun tree diff
 (defun brtree-diff (brtr num)
-  ;;  (declare (xargs :guard (and (natp num) (brtreep brtr) 
-  ;;                              (stree-size-nump brtr num))))
+;;  (declare (xargs :guard (and (natp num) (brtreep brtr) 
+;;                               (stree-size-nump brtr num))))
   (if (stree-size-nump brtr num)
     (cond
      ((and (streep-null brtr) (zp num))
@@ -113,10 +113,10 @@
       (if (oddp num)
         (brtree-diff (stree-left brtr) (/ (- num 1) 2))
         (brtree-diff (stree-right brtr) (/ (- num 2) 2)))))
-    'error))
+    0))
 
-;;braun tree size
-;; the guard here cannot be verified
+   ;;braun tree size
+   ;; the guard here cannot be verified
 (defun brtree-size (brtr)
 ;;  (declare (xargs :guard (brtreep brtr)))
   (if (streep-null brtr)
@@ -124,61 +124,54 @@
     (let ((m (brtree-size (stree-right brtr)))
          (s (stree-left brtr)))
           (+ 1 (* 2 m) (brtree-diff s m)))))
-
+(defthm stree-size-return-nat
+  (implies (streep tr)
+           (natp (stree-size tr))))
 ;;disable stree* function
 ;; these functions needn't be rewritten
 (in-theory (disable streep streep-leaf streep-null 
                    stree-left stree-right stree-size))#|ACL2s-ToDo-Line|#
 
 
+;;theory about diff
 #|
-(defthm stree-size-and-brtree-diff
-  (implies (and (brtreep brtr) (not (streep-null brtr)))
-           (equal (+ (stree-size (stree-right brtr))
-                     (brtree-diff (stree-left brtr)
-                                  (stree-size (stree-right brtr))))
-                  (stree-size (stree-left brtr)))))
+(defthm size+diff
+  (implies (and (brtreep tr)
+                (not (streep-null tr)))
+           (equal (+ (stree-size (stree-right tr))
+                     (brtree-diff (stree-left tr) 
+                                  (stree-size (stree-right tr))))
+                  (stree-size (stree-left tr)))))
 |#
-
-
-(defthm brtree-size=brtree-size+brtree-size
-  (implies (and (brtreep brtr) (not (streep-null brtr)))
-           (equal (brtree-size brtr)
-                  (+ 1 
-                     (brtree-size (stree-left brtr))
-                     (brtree-size (stree-right brtr)))))
-  :hints (("Goal" :do-not-induct t)))
-
-(defthm brtree-size-correct-null
-  (implies (and (brtreep brtr) (streep-null brtr))
-           (equal (brtree-size brtr)
-                  (stree-size-it brtr))))
 ;;our final target
 ;; 1. Try to prove it on paper
 ;; 2. Try to prove it via ACL2
 
+(defthm brtee-size-correct
+  (implies (brtreep brtr)
+           (equal (brtree-size brtr) (stree-size brtr)))
+  :rule-classes nil)
+
 #|
-:P
-Induction Scheme
-1. (IMPLIES (NOT (STREEP BRTR)) (:P BRTR)) ;;hyps false
-2. (IMPLIES (AND (STREEP BRTR) ;;hyp0
-                 (NOT (STREEP-NULL BRTR)) ;;hyp1
-                 (NOT (OR (EQUAL (STREE-SIZE (STREE-LEFT BRTR))
-                                 (STREE-SIZE (STREE-RIGHT BRTR)))
-                          (EQUAL (STREE-SIZE (STREE-LEFT BRTR))
-                                 (+ (STREE-SIZE (STREE-RIGHT BRTR))
-                                    1))))) ;;hyp2
-              (:P BRTR)) ;;conflict hyp2 brtree
+1. (IMPLIES (NOT (STREEP BRTR)) (:P BRTR))
+2. (IMPLIES (AND (STREEP BRTR)
+                   (NOT (STREEP-NULL BRTR))
+                   (NOT (OR (EQUAL (STREE-SIZE (STREE-LEFT BRTR))
+                                   (STREE-SIZE (STREE-RIGHT BRTR)))
+                            (EQUAL (STREE-SIZE (STREE-LEFT BRTR))
+                                   (+ (STREE-SIZE (STREE-RIGHT BRTR))
+                                      1)))))
+              (:P BRTR))
 3. (IMPLIES (AND (STREEP BRTR)
-                 (NOT (STREEP-NULL BRTR))
-                 (OR (EQUAL (STREE-SIZE (STREE-LEFT BRTR))
-                            (STREE-SIZE (STREE-RIGHT BRTR)))
-                     (EQUAL (STREE-SIZE (STREE-LEFT BRTR))
-                            (+ (STREE-SIZE (STREE-RIGHT BRTR)) 1)))
-                 (NOT (BRTREEP (STREE-LEFT BRTR)))
-                 (:P (STREE-LEFT BRTR)))
-            (:P BRTR)) 
-     (IMPLIES (AND (STREEP BRTR)
+                   (NOT (STREEP-NULL BRTR))
+                   (OR (EQUAL (STREE-SIZE (STREE-LEFT BRTR))
+                              (STREE-SIZE (STREE-RIGHT BRTR)))
+                       (EQUAL (STREE-SIZE (STREE-LEFT BRTR))
+                              (+ (STREE-SIZE (STREE-RIGHT BRTR)) 1)))
+                   (NOT (BRTREEP (STREE-LEFT BRTR)))
+                   (:P (STREE-LEFT BRTR)))
+              (:P BRTR))
+4. (IMPLIES (AND (STREEP BRTR)
                    (NOT (STREEP-NULL BRTR))
                    (OR (EQUAL (STREE-SIZE (STREE-LEFT BRTR))
                               (STREE-SIZE (STREE-RIGHT BRTR)))
@@ -188,15 +181,9 @@ Induction Scheme
                    (:P (STREE-LEFT BRTR))
                    (:P (STREE-RIGHT BRTR)))
               (:P BRTR))
-     (IMPLIES (AND (STREEP BRTR) (STREEP-NULL BRTR))
+5. (IMPLIES (AND (STREEP BRTR) (STREEP-NULL BRTR))
               (:P BRTR))
 |#
-;;(defthm brtee-size-correct
-(verify
-  (implies (brtreep brtr)
-           (equal (brtree-size brtr) (stree-size-it brtr)))
-  :rule-classes nil)
-
 #|
 brtree-size brtr
 =
@@ -207,9 +194,6 @@ brtree-size brtr
 =
 1 + brtree-size rt + brtree-size lt
 |#
-
-
-
 
 
 
