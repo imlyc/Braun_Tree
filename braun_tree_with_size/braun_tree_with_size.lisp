@@ -97,6 +97,11 @@
   (implies (streep tr)
            (equal (stree-size-it tr) (stree-size tr))))
 
+(defunc streep-null (tr)
+  :input-contract (streep tr)
+  :output-contract (booleanp (streep-null tr))
+  (endp tr))
+
 (defunc streep-leaf (tr)
   :input-contract (streep tr)
   :output-contract (booleanp (streep-leaf tr))
@@ -139,14 +144,23 @@
 (defthm brtree-right-is-brtree
   (implies (and (brtreep brtr) (not (endp brtr)))
            (brtreep (stree-right brtr))))
-;;number theory
-;;(in-theory (disable evenp oddp))
-;;(defdata one-zero (oneof 1 0))
-(defthm natp-compound-recognizer      ; See discussion below.
-  (equal (natp x)
-         (and (integerp x)
-              (<= 0 x)))
-  :rule-classes :compound-recognizer)#|ACL2s-ToDo-Line|#
+
+(defthm stree-size-nump-0
+  (implies (and (brtreep brtr)
+                (not (streep-leaf brtr))
+                (stree-size-nump brtr 0))
+           (endp brtr))
+  :rule-classes :forward-chaining)
+
+(defthm stree-property
+  (implies (and (streep tr) (not (endp tr)))
+           (and (consp (cdr tr))
+                (true-listp (cddr tr))
+                (equal (len (cddr tr)) 2)))
+  :rule-classes (:forward-chaining
+                 :type-prescription))
+
+(in-theory (disable stree-left stree-right stree-size streep))#|ACL2s-ToDo-Line|#
 
 
 ;;braun tree diff
@@ -155,14 +169,29 @@
                               (stree-size-nump brtr num))
   :output-contract (natp (brtree-diff brtr num))
   (cond
-   ((zp num)
-    (if (streep-leaf brtr)
-      1
-      0))
-   ((oddp num)
-    (brtree-diff (stree-left brtr) (/ (- num 1) 2)))
-   ((evenp num)
-    (brtree-diff (stree-right brtr) (/ (- num 2) 2)))))
+   ((and (endp brtr) (zp num))
+    0)
+   ((and (streep-leaf brtr) (zp num))
+    1)
+   (t
+    (if (oddp num)
+      (brtree-diff (stree-left brtr) (/ (- num 1) 2))
+      (brtree-diff (stree-right brtr) (/ (- num 2) 2))))))
+  
+#|
+(IMPLIES (AND (CONSP (CDR BRTR)) ;;rest tr is consp
+              (TRUE-LISTP (CDDR BRTR)) ;;(rt data) is true-list
+              (STREEP (CADDR BRTR)) ;; rt is stree
+              (CONSP (CADDR BRTR)) ;; rt is consp
+              (EQUAL 1 (CAR BRTR)) ;; tr size 1
+              (EQUAL 0 (CAADDR BRTR)) ;; rt size is 0
+              (NOT (CADR BRTR)) ;; lt is nil
+              (BRTREEP (CADDR BRTR)) ;;rt is brtree
+              (CONSP BRTR) ;;tr is consp
+              (EQUAL (LEN (CDDR BRTR)) 2)) ;;
+         (INTEGERP (ACL2S-UNDEFINED 'BRTREE-DIFF
+                                    (CONS (CADDR BRTR) '(-1)))))
+|#
 
 ;;braun size
 (defun brtree-size (brtr)
