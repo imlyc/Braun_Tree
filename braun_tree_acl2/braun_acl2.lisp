@@ -89,6 +89,11 @@
             nil))))
     nil))
 
+(defthm brtree-is-stree
+  (implies (brtreep tr)
+           (streep tr))
+  :rule-classes :forward-chaining)
+
 ;;in brtree-diff, num must satisfy the condition
 ;; that size = num or size = num + 1
 ;; this function maybe not used
@@ -98,6 +103,8 @@
   (let ((sz (stree-size brtr)))
     (or (equal sz num)
         (equal sz (+ num 1)))))
+
+
 
 ;;braun tree diff
 (defun brtree-diff (brtr num)
@@ -113,7 +120,25 @@
       (if (oddp num)
         (brtree-diff (stree-left brtr) (/ (- num 1) 2))
         (brtree-diff (stree-right brtr) (/ (- num 2) 2)))))
-    0))
+    'error))
+
+(defthm brtree-diff-def
+  (implies 
+   (stree-size-nump brtr num)
+   (equal 
+    (brtree-diff brtr num)
+    (cond
+     ((and (streep-null brtr) (zp num))
+      0)
+     ((and (streep-leaf brtr) (zp num))
+      1)
+     (t
+      (if (oddp num)
+        (brtree-diff (stree-left brtr) (/ (- num 1) 2))
+        (brtree-diff (stree-right brtr) (/ (- num 2) 2)))))))
+  :rule-classes :definition)
+(in-theory (disable brtree-diff))
+
 
    ;;braun tree size
    ;; the guard here cannot be verified
@@ -123,7 +148,8 @@
     0
     (let ((m (brtree-size (stree-right brtr)))
          (s (stree-left brtr)))
-          (+ 1 (* 2 m) (brtree-diff s m)))))
+          (+ 1 (* m 2) (brtree-diff s m)))))
+
 (defthm stree-size-return-nat
   (implies (streep tr)
            (natp (stree-size tr))))
@@ -131,18 +157,20 @@
 ;; these functions needn't be rewritten
 (in-theory (disable streep streep-leaf streep-null 
                    stree-left stree-right stree-size))#|ACL2s-ToDo-Line|#
-
+;; brtree-diff))
 
 ;;theory about diff
-#|
+
 (defthm size+diff
   (implies (and (brtreep tr)
                 (not (streep-null tr)))
            (equal (+ (stree-size (stree-right tr))
                      (brtree-diff (stree-left tr) 
                                   (stree-size (stree-right tr))))
-                  (stree-size (stree-left tr)))))
-|#
+                  (stree-size (stree-left tr))))
+  :hints (("Goal" :do-not-induct t)
+          ("Subgoal 5" :use brtree-diff-def)))
+
 ;;our final target
 ;; 1. Try to prove it on paper
 ;; 2. Try to prove it via ACL2
