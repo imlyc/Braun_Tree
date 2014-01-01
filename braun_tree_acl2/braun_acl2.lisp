@@ -70,8 +70,9 @@
 ;;tree size equivalence
 (defthm stree-size-it=stree-size
   (implies (streep tr)
-           (equal (stree-size-it tr) (stree-size tr)))
-  :rule-classes nil)
+           (equal (stree-size tr) (stree-size-it tr))))
+(in-theory (disable stree-size-it=stree-size))
+;;  :rule-classes nil)
 
 ;;braun tree
 (defun brtreep (brtr)
@@ -150,16 +151,68 @@
          (s (stree-left brtr)))
           (+ 1 (* m 2) (brtree-diff s m)))))
 
-(defthm stree-size-return-nat
+;;theory about diff
+
+(defthm stree-size-is-nat
   (implies (streep tr)
-           (natp (stree-size tr))))
+           (natp (stree-size tr)))
+  :rule-classes :forward-chaining)
+
+;; truth about diff
+
+(defthm stree-size-is-odd
+  (implies (brtreep tr)
+           (implies (oddp (stree-size tr))
+                    (equal (stree-size (stree-right tr))
+                           (/ (- (stree-size tr) 1) 2)))))
+
+
+(defthm stree-size-is-even
+  (implies (brtreep tr)
+           (implies (evenp (stree-size tr))
+                    (equal (stree-size (stree-left tr))
+                           (/ (stree-size tr) 2)))))
+
+
+
 ;;disable stree* function
 ;; these functions needn't be rewritten
+;;(in-theory (disable streep streep-leaf streep-null 
+  ;;                 stree-left stree-right stree-size))
+
+(defthm stree-size-def
+  (implies (and (streep tr) (not (streep-null tr)))
+           (equal (stree-size tr)
+                  (+ 1 (stree-size (stree-left tr))
+                     (stree-size (stree-right tr)))))
+  :rule-classes :forward-chaining)
+(defthm stree-size-0-null
+  (implies (streep tr)
+           (equal (equal (stree-size tr) 0)
+                  (streep-null tr)))
+  :rule-classes :forward-chaining)
+
+(defthm stree-size-1-leaf
+  (implies (streep tr)
+           (equal (equal (stree-size tr) 1)
+                  (streep-leaf tr)))
+   :hints (("Goal" :in-theory (enable stree-size-it=stree-size))))
+                  
 (in-theory (disable streep streep-leaf streep-null 
                    stree-left stree-right stree-size))#|ACL2s-ToDo-Line|#
-;; brtree-diff))
 
-;;theory about diff
+
+(defthm brtree-diff-is-nat
+  (implies (and (brtreep tr) (natp num))
+           (implies (stree-size-nump tr num)
+                    (natp (brtree-diff tr num)))))
+
+#|
+(defthm diff-0
+  (implies (brtreep tr)
+           (equal (brtree-diff tr (stree-size tr))
+                  0)))
+
 
 (defthm size+diff
   (implies (and (brtreep tr)
@@ -168,9 +221,9 @@
                      (brtree-diff (stree-left tr) 
                                   (stree-size (stree-right tr))))
                   (stree-size (stree-left tr))))
-  :hints (("Goal" :do-not-induct t)
+  :hints (("Goal" :do-not-induct t)))
           ("Subgoal 5" :use brtree-diff-def)))
-
+|#
 ;;our final target
 ;; 1. Try to prove it on paper
 ;; 2. Try to prove it via ACL2
