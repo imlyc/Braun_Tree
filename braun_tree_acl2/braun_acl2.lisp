@@ -123,6 +123,7 @@
         (brtree-diff (stree-right brtr) (/ (- num 2) 2)))))
     'error))
 
+
 (defthm brtree-diff-def
   (implies 
    (stree-size-nump brtr num)
@@ -197,23 +198,28 @@
            (equal (equal (stree-size tr) 1)
                   (streep-leaf tr)))
    :hints (("Goal" :in-theory (enable stree-size-it=stree-size))))
-                  
-(in-theory (disable streep streep-leaf streep-null 
-                   stree-left stree-right stree-size))#|ACL2s-ToDo-Line|#
 
-
-(defthm brtree-diff-is-nat
-  (implies (and (brtreep tr) (natp num))
-           (implies (stree-size-nump tr num)
-                    (natp (brtree-diff tr num)))))
-
-#|
 (defthm diff-0
   (implies (brtreep tr)
            (equal (brtree-diff tr (stree-size tr))
                   0)))
 
 
+(in-theory (disable streep streep-leaf streep-null 
+                   stree-left stree-right stree-size))#|ACL2s-ToDo-Line|#
+
+
+
+
+(defthm brtree-diff-is-nat
+  (implies (and (brtreep brtr) (natp num))
+           (implies (stree-size-nump brtr num)
+                    (natp (brtree-diff brtr num)))))
+
+
+
+
+#|
 (defthm size+diff
   (implies (and (brtreep tr)
                 (not (streep-null tr)))
