@@ -123,14 +123,13 @@
         (brtree-diff (stree-right brtr) (/ (- num 2) 2)))))
     'error))
 
-
 (defthm brtree-diff-def
   (implies 
    (stree-size-nump brtr num)
    (equal 
     (brtree-diff brtr num)
     (cond
-     ((and (streep-null brtr) (zp num))
+     ((and (streep-null brtr));; (zp num))
       0)
      ((and (streep-leaf brtr) (zp num))
       1)
@@ -140,7 +139,6 @@
         (brtree-diff (stree-right brtr) (/ (- num 2) 2)))))))
   :rule-classes :definition)
 (in-theory (disable brtree-diff))
-
 
    ;;braun tree size
    ;; the guard here cannot be verified
@@ -202,23 +200,31 @@
 (defthm diff-0
   (implies (brtreep tr)
            (equal (brtree-diff tr (stree-size tr))
-                  0)))
+                  0))
+  :rule-classes (:rewrite :forward-chaining))
 
+
+(defthm diff-1
+  (implies (and (brtreep tr) (not (streep-null tr)))
+           (equal (brtree-diff tr (- (stree-size tr) 1))
+                  1))
+  :hints (("Goal" :in-theory (disable stree-size)))
+  :rule-classes (:rewrite :forward-chaining))
 
 (in-theory (disable streep streep-leaf streep-null 
                    stree-left stree-right stree-size))#|ACL2s-ToDo-Line|#
 
 
-
-
+#|
 (defthm brtree-diff-is-nat
+
   (implies (and (brtreep brtr) (natp num))
            (implies (stree-size-nump brtr num)
-                    (natp (brtree-diff brtr num)))))
-
-
-
-
+                    (natp (brtree-diff brtr num))))
+  :hints (("Goal" :in-theory (disable brtree-diff-def brtree-diff))))
+          ("Subgoal 1" :do-not-induct t
+                       :use plus-and-minus)
+|#
 #|
 (defthm size+diff
   (implies (and (brtreep tr)
@@ -226,7 +232,7 @@
            (equal (+ (stree-size (stree-right tr))
                      (brtree-diff (stree-left tr) 
                                   (stree-size (stree-right tr))))
-                  (stree-size (stree-left tr))))
+                  (stree-size (stree-left tr)))))
   :hints (("Goal" :do-not-induct t)))
           ("Subgoal 5" :use brtree-diff-def)))
 |#
