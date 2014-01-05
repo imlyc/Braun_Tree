@@ -212,27 +212,43 @@
   :rule-classes (:rewrite :forward-chaining))
 
 (in-theory (disable streep streep-leaf streep-null 
-                   stree-left stree-right stree-size))#|ACL2s-ToDo-Line|#
+                   stree-left stree-right stree-size))
 
+(defthm plus-and-minus
+  (implies (and (natp n1) (natp n2))
+           (iff (equal n1 (+ 1 n2))
+                    (equal n2 (- n1 1)))))
 
-#|
 (defthm brtree-diff-is-nat
 
   (implies (and (brtreep brtr) (natp num))
            (implies (stree-size-nump brtr num)
                     (natp (brtree-diff brtr num))))
-  :hints (("Goal" :in-theory (disable brtree-diff-def brtree-diff))))
-          ("Subgoal 1" :do-not-induct t
-                       :use plus-and-minus)
-|#
-#|
+  :hints (("Subgoal 1" :cases ((zp num))))
+  :rule-classes :forward-chaining)
+(in-theory (disable plus-and-minus))
+
+(defthm brtree-size-is-nat
+  (implies (brtreep tr)
+           (natp (brtree-size tr)))
+  :rule-classes :forward-chaining)
+
+(defthm brtree-left-right-size
+  (implies (and (brtreep tr)
+                (not (streep-null tr)))
+           (stree-size-nump (stree-left tr)
+                            (stree-size (stree-right tr))))
+  :rule-classes :forward-chaining)#|ACL2s-ToDo-Line|#
+
+
+
 (defthm size+diff
   (implies (and (brtreep tr)
                 (not (streep-null tr)))
            (equal (+ (stree-size (stree-right tr))
                      (brtree-diff (stree-left tr) 
                                   (stree-size (stree-right tr))))
-                  (stree-size (stree-left tr)))))
+                  (stree-size (stree-left tr))))
   :hints (("Goal" :do-not-induct t)))
           ("Subgoal 5" :use brtree-diff-def)))
 |#
