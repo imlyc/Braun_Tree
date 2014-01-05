@@ -138,6 +138,12 @@
         (brtree-diff (stree-left brtr) (/ (- num 1) 2))
         (brtree-diff (stree-right brtr) (/ (- num 2) 2)))))))
   :rule-classes :definition)
+
+(defthm brtree-diff-minus
+  (implies (and (brtreep tr) (natp num) (stree-size-nump tr num)) 
+           (equal (brtree-diff tr num)
+                  (- (stree-size tr) num)))
+  :hints (("Goal" :in-theory (disable stree-size))))
 (in-theory (disable brtree-diff))
 
    ;;braun tree size
@@ -221,11 +227,10 @@
 
 (defthm brtree-diff-is-nat
 
-  (implies (and (brtreep brtr) (natp num))
-           (implies (stree-size-nump brtr num)
-                    (natp (brtree-diff brtr num))))
+  (implies (and (brtreep tr) (natp num) (stree-size-nump tr num))
+                    (natp (brtree-diff tr num)))
   :hints (("Subgoal 1" :cases ((zp num))))
-  :rule-classes :forward-chaining)
+  :rule-classes (:forward-chaining :type-prescription))
 (in-theory (disable plus-and-minus))
 
 (defthm brtree-size-is-nat
@@ -238,8 +243,23 @@
                 (not (streep-null tr)))
            (stree-size-nump (stree-left tr)
                             (stree-size (stree-right tr))))
-  :rule-classes :forward-chaining)#|ACL2s-ToDo-Line|#
+  :rule-classes :forward-chaining)
 
+(defthm brtree-left-is-brtree
+  (implies (and (brtreep tr) (not (streep-null tr)))
+           (brtreep (stree-left tr)))
+  :rule-classes (:rewrite :forward-chaining))
+(defthm brtree-right-is-brtree
+  (implies (and (brtreep tr) (not (streep-null tr)))
+           (brtreep (stree-right tr)))
+  :rule-classes (:rewrite :forward-chaining))
+(defthm brtree-left-right-diff-nat
+  (implies (and (brtreep tr)
+                (not (streep-null tr)))
+           (natp (brtree-diff (stree-left tr)
+                            (stree-size (stree-right tr)))))
+  :rule-classes (:forward-chaining :type-prescription))
+(in-theory (disable (:type-prescription brtree-diff)))
 
 
 (defthm size+diff
@@ -249,9 +269,10 @@
                      (brtree-diff (stree-left tr) 
                                   (stree-size (stree-right tr))))
                   (stree-size (stree-left tr))))
-  :hints (("Goal" :do-not-induct t)))
-          ("Subgoal 5" :use brtree-diff-def)))
-|#
+  :hints (("Goal" :do-not-induct t 
+           :expand (brtree-diff (stree-left tr) (stree-size (stree-right tr)))
+           :in-theory (disable brtreep))))
+
 ;;our final target
 ;; 1. Try to prove it on paper
 ;; 2. Try to prove it via ACL2
@@ -259,63 +280,4 @@
 (defthm brtee-size-correct
   (implies (brtreep brtr)
            (equal (brtree-size brtr) (stree-size brtr)))
-  :rule-classes nil)
-
-#|
-1. (IMPLIES (NOT (STREEP BRTR)) (:P BRTR))
-2. (IMPLIES (AND (STREEP BRTR)
-                   (NOT (STREEP-NULL BRTR))
-                   (NOT (OR (EQUAL (STREE-SIZE (STREE-LEFT BRTR))
-                                   (STREE-SIZE (STREE-RIGHT BRTR)))
-                            (EQUAL (STREE-SIZE (STREE-LEFT BRTR))
-                                   (+ (STREE-SIZE (STREE-RIGHT BRTR))
-                                      1)))))
-              (:P BRTR))
-3. (IMPLIES (AND (STREEP BRTR)
-                   (NOT (STREEP-NULL BRTR))
-                   (OR (EQUAL (STREE-SIZE (STREE-LEFT BRTR))
-                              (STREE-SIZE (STREE-RIGHT BRTR)))
-                       (EQUAL (STREE-SIZE (STREE-LEFT BRTR))
-                              (+ (STREE-SIZE (STREE-RIGHT BRTR)) 1)))
-                   (NOT (BRTREEP (STREE-LEFT BRTR)))
-                   (:P (STREE-LEFT BRTR)))
-              (:P BRTR))
-4. (IMPLIES (AND (STREEP BRTR)
-                   (NOT (STREEP-NULL BRTR))
-                   (OR (EQUAL (STREE-SIZE (STREE-LEFT BRTR))
-                              (STREE-SIZE (STREE-RIGHT BRTR)))
-                       (EQUAL (STREE-SIZE (STREE-LEFT BRTR))
-                              (+ (STREE-SIZE (STREE-RIGHT BRTR)) 1)))
-                   (BRTREEP (STREE-LEFT BRTR))
-                   (:P (STREE-LEFT BRTR))
-                   (:P (STREE-RIGHT BRTR)))
-              (:P BRTR))
-5. (IMPLIES (AND (STREEP BRTR) (STREEP-NULL BRTR))
-              (:P BRTR))
-|#
-#|
-brtree-size brtr
-=
-1 + 2 brtree-size rt + brtree-diff lt (brtree-size rt)
-=
-1 + brtree-size rt + 
-(brtree-size rt + brtree-diff lt (brtree-size rt))
-=
-1 + brtree-size rt + brtree-size lt
-|#
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  :rule-classes nil)#|ACL2s-ToDo-Line|#
